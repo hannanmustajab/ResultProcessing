@@ -1,33 +1,34 @@
-from flask_wtf import Form
-from wtforms import TextField, PasswordField
+from flask_wtf import FlaskForm
+from wtforms import TextField, PasswordField, StringField, BooleanField, FileField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, EqualTo, Length
-
+from flask_wtf import Form
 # Set your classes here.
 
 
-class RegisterForm(Form):
-    name = TextField(
-        'Username', validators=[DataRequired(), Length(min=6, max=25)]
+class AddStudents(FlaskForm):
+    name = StringField(
+        'Course Name', validators=[DataRequired(), Length(min=2, max=25)]
     )
-    email = TextField(
-        'Email', validators=[DataRequired(), Length(min=6, max=40)]
-    )
-    password = PasswordField(
-        'Password', validators=[DataRequired(), Length(min=6, max=40)]
-    )
-    confirm = PasswordField(
-        'Repeat Password',
-        [DataRequired(),
-        EqualTo('password', message='Passwords must match')]
+    course_id = StringField(
+        'Course ID', validators=[DataRequired(), Length(min=4, max=4)]
     )
 
+    no_of_choices = IntegerField('Number of choices',validators=[DataRequired()])
 
-class LoginForm(Form):
-    name = TextField('Username', [DataRequired()])
-    password = PasswordField('Password', [DataRequired()])
-
-
-class ForgotForm(Form):
-    email = TextField(
-        'Email', validators=[DataRequired(), Length(min=6, max=40)]
+    special_category = BooleanField(
+        'Special Category', validators=[DataRequired()]
     )
+    file = FileField(
+        'File Upload', validators=[DataRequired()]
+    )
+
+    submit = SubmitField('Submit')
+
+class AddBranchForm(FlaskForm):
+    name = StringField(
+        'Name', validators=[DataRequired(), Length(min=2, max=25)]
+    )
+    internal_seats = IntegerField('Internal', validators=[DataRequired()])
+    external_seats = IntegerField('External', validators=[DataRequired()])
+    extra_seats = IntegerField('Special ')
+    submit = SubmitField('Add Branch')

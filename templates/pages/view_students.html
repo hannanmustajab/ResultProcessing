@@ -1,10 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'layouts/main.html' %}
+{% block title %}About{% endblock %}
+{% block content %}
+    <div class="jumbotron">
+        <h2 class="display-4">{{record['name']}}</h2>
+        <h3>Total Students <span class="badge badge-secondary">{{total}}</span></h3>
+        <h3>Total Internals <span class="badge badge-secondary">{{internals}}</span></h3>
+        <h3>Total External <span class="badge badge-secondary">{{externals}}</span></h3>
+        <hr class="my-4">
+        <h2>Total Branches: {{record['no_of_branches']}}</h2>
+        <p class="lead">
+         {% if courses_len == record['no_of_branches'] and not record['processed'] %}
+            <a class="btn btn-primary btn-lg" href="#" role="button">Generate Result</a>
+         {% elif record['processed'] %}
+        </p>
+        <button type="button" class="btn btn-primary btn-lg">Download PDF</button>
+        {% else %}
+         <span class="danger">Please add all branches / courses .</span>
+        {% endif %}
+    </div>
+
+
+    <h3>Branches and Seats</h3>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Internal</th>
+            <th scope="col">External</th>
+            {% if record['EB'] %}
+            <th scope="col">EB</th>
+            {% endif %}
+
+        </tr>
+        </thead>
+        <tbody>
+        {% if courses_len != record['no_of_branches'] %}
+        <form action="{{ url_for('viewStudents', course_id=course_id) }}" method="post">
+            {{ form.hidden_tag() }}
+            <tr>
+                <th scope="row">{{form.name}}</th>
+                <td>{{form.internal_seats}}</td>
+                <td>{{form.external_seats}}</td>
+                {% if record['EB'] %}
+                <td>{{form.extra_seats}}</td>
+                {% endif %}
+
+                <td>{{form.submit}}</td>
+            </tr>
+        </form>
+        {% endif %}
+        {% for course in courses %}
+        <tr>
+            <th scope="row">{{course['code']}}</th>
+            <h3>
+                <td><strong>{{course.seats['I']}}</strong></td>
+                <td><strong>{{course.seats['E']}}</strong></td>
+                {% if record['EB'] %}
+                <td>{{course.seats['EB']}}</td>
+                {% endif %}
+            </h3>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

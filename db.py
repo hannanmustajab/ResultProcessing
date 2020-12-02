@@ -7,6 +7,7 @@ collection = db["students"]
 courses_collection = db["courses"]
 merit = db['merit']
 chance_memo_collection = db['chance_memo']
+course_information = db['course_information']
 
 def resetAll(collection,merit,courses_collection,chance_memo_collection):
     collection.remove()

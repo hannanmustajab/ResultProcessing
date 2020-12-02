@@ -1,10 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'layouts/main.html' %}
+{% block title %}About{% endblock %}
+{% block content %}
+<div class="formwrapper">
+  <h2 class="title">Add Students List</h2>
+  <form method="POST" action="{{url_for('uploadStudents')}}" enctype="multipart/form-data">
+       {{ form.hidden_tag() }}
+      <div class="form-field">
+          {{ form.name.label }}
+          {{ form.name(size=20) }}
+      </div>
+      <div class="form-field">
+          {{ form.course_id.label }}
+          {{ form.course_id }}
+      </div>
+      <div class="form-field">
+          {{ form.no_of_choices.label }}
+          {{ form.no_of_choices }}
+      </div>
+      <div class="form-field">
+          {{ form.special_category.label }}
+          {{ form.special_category }}
+      </div>
+      <div class="form-field">
+          {{ form.file.label }}
+          {{ form.file }}
+      </div>
+      {{ form.submit }}
+  </form>
+</div>
+
+
+{% endblock %}

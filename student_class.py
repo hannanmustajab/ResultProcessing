@@ -1,15 +1,18 @@
 import csv
 from datetime import datetime
-
+import pathlib
+import os.path
 from db import collection,courses_collection
 
 
 class Students():
-    def __init__(self,course_id):
+    def __init__(self,course_id,course_name,no_of_choices):
         self.course_id = course_id
         self._list = []
         dt = datetime.now()
         self._year = dt.strftime("%Y")
+        self.name = course_name
+        self.number_of_choices = no_of_choices
 
     def __read_students(self,file):
         with open(file) as csv_file:
@@ -18,7 +21,7 @@ class Students():
             default = ['COBT', 'LEBT', 'EEBT', 'KEBT', 'PKBT', 'MEBT', 'CEBT']
             for row in csv_reader:
                 choices = []
-                for i in range(1, 8):
+                for i in range(1, self.number_of_choices + 1):
                     if row[f'CRS{i}'] == "":
                         choices = default
                         break
@@ -34,7 +37,8 @@ class Students():
                     'choices': choices,
                     'rel': row['REL'],
                     'course':self.course_id,
-                    'year':self._year
+                    'year':self._year,
+                    'course_name':self.name
                 }
                 self._list.append(student)
 
@@ -57,6 +61,7 @@ class Students():
         print(f"Total students: {totalStudents}")
         print(f"Total Internals: {internals}")
         print(f"Total Externals: {externals}")
+        return [totalStudents,internals,externals]
 
     def find_student(self,roll_number):
         return collection.find_one({'roll_number':roll_number},{'course':self.course_id})
@@ -117,88 +122,10 @@ class Courses():
         #TODO: Add number of seats remaining in each branch under each category.
         totalBranches = courses_collection.count_documents({'course': self.course_id})
         print(f"Total Branches : {totalBranches}")
+        return totalBranches
 
 
 """
 Create course here and add students. 
-"""
-#define course id
-course_id = 1234
-#Add students
-student = Students(course_id)
-# Import students
-student.add_students('data.csv')
-#Add branches to the course.
-subjects = [
-    {
-    'code': 'KEBT',
-     'seats':
-         {
-         'I': 8,
-         'E': 8,
-         'EB': 8
-        }
-     },
-    {
-    'code': 'CEBT',
-     'seats':
-         {
-         'I': 16,
-         'E': 17,
-         'EB': 15
-        }
-     },
-    {
-    'code': 'COBT',
-     'seats':
-         {
-         'I': 14,
-         'E': 14,
-         'EB': 12
-        }
-     },
-    {
-    'code': 'EEBT',
-     'seats':
-         {
-         'I': 17,
-         'E': 16,
-         'EB': 15
-        }
-     },
-    {
-    'code': 'LEBT',
-     'seats':
-         {
-         'I': 14,
-         'E': 14,
-         'EB': 12
-        }
-     },
-    {
-    'code': 'MEBT',
-     'seats':
-         {
-         'I': 25,
-         'E': 24,
-         'EB': 23
-        }
-     },
-    {
-    'code': 'PKBT',
-     'seats':
-         {
-         'I': 7,
-         'E': 7,
-         'EB': 6
-        }
-     },
+# """
 
-]
-MMB = Courses(1234)
-MMB.setEBCategory()
-sum = 0
-for subject in subjects:
-    (MMB.addBranch(subject['code'],subject['seats']['I'],subject['seats']['E'],subject['seats']['EB']))
-    total  = subject['seats']['EB'] + subject['seats']['I'] + subject['seats']['E']
-    sum += total

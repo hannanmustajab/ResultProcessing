@@ -1,20 +1,15 @@
 import datetime
-from colorama import Fore
-import time
-from reportlab.lib.enums import TA_JUSTIFY
-from reportlab.lib.pagesizes import letter,A4
+import os.path
+
+import pymongo
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib import colors, styles
-from db import courses_collection, collection, merit,chance_memo_collection
-import timeit,pymongo
-from threading import Thread
-from functools import partial
-
-
+from db import courses_collection, collection, merit, chance_memo_collection
 
 
 class Merit():
-    def __init__(self, course_id, EB: bool, chance_memo,sort_on):
+    def __init__(self, course_id, EB: bool, chance_memo, sort_on):
         self.course_id = course_id
         dt = datetime.datetime.now()
         self._year = dt.strftime("%Y")
@@ -75,7 +70,7 @@ class Merit():
                         'Rank': "S%03d" % rank,
                         'flag': 'SGM',
                         'year': self._year,
-                        'course':self.course_id
+                        'course': self.course_id
                     }
                     alotted = True
                     rank += 1
@@ -141,7 +136,7 @@ class Merit():
                 # If the student is not alotted any branch, Add him to chance memo list.
                 if not alotted:
                     data = {
-                        'name':student['name'],
+                        'name': student['name'],
                         'roll_number': roll_number,
                         'branch': first_choice,
                         'choices': choices,
@@ -150,10 +145,10 @@ class Merit():
                         'first_choice': False,
                         'confirmed': False,
                         'Rank': "0",
-                        'flag':rel,
+                        'flag': rel,
                         'year': self._year,
                         'course': self.course_id,
-                        'rel':student['rel']
+                        'rel': student['rel']
                     }
                     chance_memo_list.append(data)
 
@@ -233,38 +228,41 @@ class Merit():
                         'flag': rel,
                         'year': self._year,
                         'course': self.course_id,
-                        'rel':student['rel']
+                        'rel': student['rel']
                     }
                     chance_memo_list.append(data)
 
-            iteration+=1
+            iteration += 1
             # self.printProgressBar(iteration, result_length, length=50)
 
         merit.insert_many(final_list)
 
         # Generate PDF
         fields = ['Name', 'Roll Number', 'Rank', 'Branch', 'Category', 'Marks']
-        sort_on = self.sort_on          # Sort on marks or rollnumber
-        type= 'select'
-        self.generatePDF(fields,sort_on,type)
-
+        sort_on = self.sort_on  # Sort on marks or rollnumber
+        type = 'select'
+        self.generatePDF(fields, sort_on, type)
 
         # for student in final_list:
         #     print(
         #         f" Rank: {student['Rank']} {Fore.WHITE}Roll Number: {Fore.BLUE}{student['roll_number']} {Fore.WHITE} Branch Allotted:{Fore.YELLOW} {student['branch']} {Fore.WHITE}First Choice: {Fore.RED}{student['choices'][0]} {Fore.WHITE} Type: {Fore.YELLOW}{student['type']} {Fore.WHITE}  {Fore.WHITE}Marks: {Fore.YELLOW}{student['marks']}  {Fore.WHITE}Flag: {Fore.YELLOW}{student['flag']} ")
         return chance_memo_list
 
-    def generatePDF(self,fields,sort_on,type):
+    def generatePDF(self, fields, sort_on, type):
 
-        if type=='chance_memo':
-            cursor = chance_memo_collection.find({"$and": [{'course': self.course_id}, {'year': str(self._year)}]}).sort(sort_on,pymongo.DESCENDING)
-        elif type=='select':
-            cursor = merit.find({"$and": [{'course': self.course_id}, {'year': str(self._year)}]}).sort(sort_on,pymongo.DESCENDING)
+        if type == 'chance_memo':
+            cursor = chance_memo_collection.find(
+                {"$and": [{'course': self.course_id}, {'year': str(self._year)}]}).sort(sort_on, pymongo.DESCENDING)
+        elif type == 'select':
+            cursor = merit.find({"$and": [{'course': self.course_id}, {'year': str(self._year)}]}).sort(sort_on,
+                                                                                                        pymongo.DESCENDING)
 
         for data in cursor:
-            fields.append([data['name'],data['roll_number'],data['Rank'],data['branch'],data['type'],data['marks']])
+            fields.append(
+                [data['name'], data['roll_number'], data['Rank'], data['branch'], data['type'], data['marks']])
 
-        file_name = f'{self._year}_{self.course_id}_{type}.pdf'
+        path = f'{self._year}/{self.course_id}/{type}'
+        file_name = os.path.join(path, '.pdf')
         header = Paragraph('ALIGARH MUSLIM UNIVERSITY ' * 5)
         pdf = SimpleDocTemplate(
             file_name,
@@ -304,7 +302,7 @@ class Merit():
         """
         rank = 1
         chance_memo_list = []
-        cursor = {'next':'ANY'}
+        cursor = {'next': 'ANY'}
         # Get the list excluding selected students.
         list = self.generateMerit()
         while rank <= self.chance_memo:
@@ -341,7 +339,7 @@ class Merit():
                         break
 
             # Only Internal
-            elif cursor['next']=='I':
+            elif cursor['next'] == 'I':
                 for student in list:
                     first_choice = student['choices'][0]
                     roll_number = student['roll_number']
@@ -349,7 +347,7 @@ class Merit():
                     choices = student['choices']
                     # rel = student['rel']
                     flag = student['confirmed']
-                    if flag is False and category=='I':
+                    if flag is False and category == 'I':
                         data = {
                             'name': student['name'],
                             'roll_number': roll_number,
@@ -375,7 +373,7 @@ class Merit():
                         break
             # EB Logic
 
-            elif cursor['next']=='EB':
+            elif cursor['next'] == 'EB':
                 for student in list:
                     first_choice = student['choices'][0]
                     roll_number = student['roll_number']
@@ -383,7 +381,7 @@ class Merit():
                     choices = student['choices']
                     rel = student['rel']
                     flag = student['confirmed']
-                    if flag is False and category=='E' and rel=='M':
+                    if flag is False and category == 'E' and rel == 'M':
                         data = {
                             'name': student['name'],
                             'roll_number': roll_number,
@@ -406,8 +404,6 @@ class Merit():
                         student['confirmed'] = True
                         break
 
-
-
         # Add chance memo to database.
         chance_memo_collection.insert_many(chance_memo_list)
         """
@@ -416,16 +412,16 @@ class Merit():
         # Generate PDF for chance memo here.
 
         list = [
-            ['Name','Roll Number', 'Rank', 'Branch', 'Category', 'Marks']
+            ['Name', 'Roll Number', 'Rank', 'Branch', 'Category', 'Marks']
         ]
         sort_on = self.sort_on  # Sort on marks or rollnumber
         type = 'chance_memo'
         self.generatePDF(list, sort_on, type)
 
-
         return chance_memo_list
 
-    def printProgressBar(self,iteration, total, prefix='Progress', suffix='Complete', decimals=1, length=100, fill='█', printEnd="\r"):
+    def printProgressBar(self, iteration, total, prefix='Progress', suffix='Complete', decimals=1, length=100, fill='█',
+                         printEnd="\r"):
         """
         Call in a loop to create terminal progress bar
         @params:
