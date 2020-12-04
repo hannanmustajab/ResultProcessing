@@ -1,7 +1,7 @@
 {% extends 'layouts/main.html' %}
 {% block title %}About{% endblock %}
 {% block content %}
-<div class="form-group">
+<div class="container form-group">
   <h2 class="title">Add Students List</h2>
   <form method="POST" action="{{url_for('uploadStudents')}}" enctype="multipart/form-data">
 
@@ -9,6 +9,7 @@
         <div class="form-group">
           {{ form.name.label }}
          <input class="form-control" type="text" name=form.name(size=20)>
+
         </div>
       <div class="form-field">
           {{ form.course_id.label }}

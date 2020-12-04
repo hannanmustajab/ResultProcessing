@@ -294,6 +294,10 @@ class Merit():
         elems = [table]
         pdf.build(elems)
 
+    
+        def return_file():
+            return file_name
+
     def generateChanceMemo(self):
         """
         Logic for chance memo goes here.

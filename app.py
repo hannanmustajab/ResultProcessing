@@ -2,7 +2,7 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 from flask_celery import make_celery
 # from werkzeug import secure_filename
 from db import collection,courses_collection,course_information
@@ -107,6 +107,14 @@ if not app.debug:
     file_handler.setLevel(logging.INFO)
     app.logger.addHandler(file_handler)
     app.logger.info('errors')
+
+
+#----------------------------------------------------------------------------#
+# DOWNLOAD PDF
+#----------------------------------------------------------------------------#
+@app.route('/file-download')
+def return_file():
+    return send_file(Merit.generatePDF.return_file(), attachment_filename="Result.pdf")
 
 #----------------------------------------------------------------------------#
 # ALL CELERY TASKS GO HERE...
