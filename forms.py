@@ -16,7 +16,7 @@ class AddStudents(FlaskForm):
     no_of_choices = IntegerField('Number of choices',validators=[DataRequired()])
 
     special_category = BooleanField(
-        'Special Category', validators=[DataRequired()]
+        'Special Category'
     )
     file = FileField(
         'File Upload', validators=[DataRequired()]
