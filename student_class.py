@@ -15,7 +15,7 @@ class Students():
         self.number_of_choices = no_of_choices
 
     def __read_students(self,file):
-        with open(file) as csv_file:
+        with open('uploads/'+file) as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter=',')
             count = 0
             default = ['COBT', 'LEBT', 'EEBT', 'KEBT', 'PKBT', 'MEBT', 'CEBT']
@@ -116,7 +116,7 @@ class Courses():
                     }
             }
         courses_collection.insert_one(data)
-        return f"Added {code} course with total seats: {internal+external+EB}"
+        return True
 
     def statistics(self):
         #TODO: Add number of seats remaining in each branch under each category.

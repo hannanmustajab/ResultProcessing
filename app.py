@@ -1,22 +1,23 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from pathlib import Path
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 from flask_celery import make_celery
 # from werkzeug import secure_filename
-from db import collection,courses_collection,course_information
+from db import collection,courses_collection,course_information,merit,chance_memo_collection
 from werkzeug.datastructures import FileStorage
 import logging
-
+# import the Pandas library
+import pandas
 from merit_class import Merit
 from student_class import Students,Courses
 from logging import Formatter, FileHandler
 import os
 import io
-
+import datetime
 from forms import AddStudents,AddBranchForm
-
+now = datetime.datetime.now()
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -28,22 +29,26 @@ app.config['CELERY_BROKER_URL'] ='redis://localhost:6379/0'
 celery = make_celery(app)
 
 
+
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
 
 
+
 @app.route('/')
 def home():
-    return render_template('pages/placeholder.home.html')
+    courses = course_information.find()
+    return render_template('pages/placeholder.home.html',courses=courses)
 
 # Add new course and students to it.
 @app.route('/students/add',methods = ['GET', 'POST'])
 def uploadStudents():
     form = AddStudents()
     if form.validate_on_submit():
+        print('validate form')
         filename = form.file.data.filename
-        form.file.data.save(filename)
+        form.file.data.save('uploads/'+f'{form.course_id.data}'+filename)
         course_id = form.course_id.data
         course_name = form.name.data
         no_of_choices = form.no_of_choices.data
@@ -94,8 +99,7 @@ def viewStudents(course_id):
 @app.route('/merit/generate/<course_id>', methods=['GET', 'POST'])
 def generateMeritFunction(course_id):
     task = generateMerit(course_id).apply_async()
-    return jsonify({}), 202, {'Location': url_for('taskstatus',
-                                                  task_id=task.id)}
+    return  redirect(url_for('taskstatus',task_id=task.id))
 
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
@@ -128,10 +132,47 @@ def taskstatus(task_id):
     return jsonify(response)
 
 # Generate the merit
-@app.route('/pdf/generate/<course_id>', methods=['GET', 'POST'])
-def generatePDFRoute(course_id):
-    courses = course_information.find()
-    return render_template('pages/pdf.html',course_id=course_id,courses=courses)
+@app.route('/pdf/generate/', methods=['GET', 'POST'])
+def generatePDFRoute():
+
+    courses = course_information.find({'processed':True})
+    if request.method=='POST':
+
+        # Get the course ID.
+        course_id = (request.form['course'])
+
+        # Get the type of list user wants to download
+        type = request.form['type']
+
+        if type == 'select':
+            # make an API call to the MongoDB server to get select list.
+            course_data = merit.find({'course':course_id})
+
+        elif type == 'chance_memo':
+            # make an API call to the MongoDB server to get chance memo list.
+            course_data = chance_memo_collection.find({'course': course_id})
+
+        # extract the list of documents from cursor obj
+        course_data_list = list(course_data)
+
+        # create an empty DataFrame for storing documents
+        docs = pandas.DataFrame(columns=[])
+
+        # iterate over the list of MongoDB dict documents
+        for num, doc in enumerate(course_data_list):
+            # get roll_number from dict
+            doc_id = doc["roll_number"]
+            # create a Series obj from the MongoDB dict
+            series_obj = pandas.Series(doc, name=doc_id)
+            # append the MongoDB Series obj to the DataFrame obj
+            docs = docs.append(series_obj)
+            Path(f'results/{now.year}/{course_id}').mkdir(parents=True, exist_ok=True)
+            docs.to_csv(f'results/{now.year}/{course_id}/{type}.csv', ",")
+
+        return send_file(f'results/{now.year}/{course_id}/{type}.csv')
+
+
+    return render_template('pages/pdf.html',courses=courses)
 
 
 if not app.debug:
@@ -153,7 +194,6 @@ if not app.debug:
 def generateMerit(self,course_id):
     merit = Merit(course_id, EB=True, chance_memo=400, sort_on='marks')
     merit.generateChanceMemo()
-    self.update_state(state='PROGRESS')
     course_information.update_one({'course_id': course_id},{'$set':{'processed':True}})
     return { 'status': 'Task completed!'}
 
