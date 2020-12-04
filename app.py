@@ -3,6 +3,7 @@
 #----------------------------------------------------------------------------#
 
 from flask import Flask, render_template, request, redirect, url_for, send_file
+
 from flask_celery import make_celery
 # from werkzeug import secure_filename
 from db import collection,courses_collection,course_information
@@ -90,12 +91,48 @@ def viewStudents(course_id):
 
     return render_template('pages/view_students.html',total=total,courses_len=courses_len,internals=internals,externals=externals,record=record,courses=courses,form=form,course_id=course_id)
 
-
 # Generate the merit
 @app.route('/merit/generate/<course_id>', methods=['GET', 'POST'])
 def generateMeritFunction(course_id):
-    generateMerit.delay(course_id)
-    return redirect(url_for('viewStudents',course_id=course_id))
+    task = generateMerit(course_id).apply_async()
+    return jsonify({}), 202, {'Location': url_for('taskstatus',
+                                                  task_id=task.id)}
+
+@app.route('/status/<task_id>')
+def taskstatus(task_id):
+    task = generateMeritFunction.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        # job did not start yet
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', '')
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return jsonify(response)
+
+# Generate the merit
+@app.route('/pdf/generate/<course_id>', methods=['GET', 'POST'])
+def generatePDFRoute(course_id):
+    courses = course_information.find()
+    return render_template('pages/pdf.html',course_id=course_id,courses=courses)
 
 
 if not app.debug:
@@ -121,12 +158,15 @@ def return_file():
 #----------------------------------------------------------------------------#
 
 # Create celery task here.
-@celery.task(name='app.generateMerit')
-def generateMerit(course_id):
+@celery.task(bind=True)
+def generateMerit(self,course_id):
     merit = Merit(course_id, EB=True, chance_memo=400, sort_on='marks')
     merit.generateChanceMemo()
+    self.update_state(state='PROGRESS')
     course_information.update_one({'course_id': course_id},{'$set':{'processed':True}})
-    return 'Result Generated!'
+    return { 'status': 'Task completed!'}
+
+
 
 #
 #----------------------------------------------------------------------------#
@@ -137,9 +177,3 @@ def generateMerit(course_id):
 if __name__ == '__main__':
     app.run(debug=True,port='2000')
 
-# Or specify port manually:
-'''
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-'''

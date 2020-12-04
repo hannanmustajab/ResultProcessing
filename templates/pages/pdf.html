@@ -1,0 +1,55 @@
+{% extends 'layouts/main.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Generate PDF</h1>
+</div>
+<p class="lead">
+  <!-- Material form contact -->
+<div class="card col-lg-12">
+
+   <form>
+
+        <div class="form-group col-lg-4">
+          <label for="inputState">Select Examination</label>
+          <select id="inputState" class="form-control">
+          <option selected>Choose...</option>
+         {% for course in courses %}
+            <option value="{{course['course_id']}}">{{course['name']}}</option>
+          {% endfor %}
+        </select>
+        </div>
+
+        <div class="form-group col-md-4">
+          <label for="inputPassword4">Name to be Printed</label>
+          <input type="text" class="form-control" id="inputPassword4" placeholder="Name to be printed on the header" name="header_name">
+        </div>
+
+        <div class="form-group col-md-4">
+          <label for="inputState">List Type</label>
+          <select id="inputState" class="form-control">
+            <option selected>Choose...</option>
+            <option value="select">Select List</option>
+            <option value="chance_memo">Chance Memo</option>
+
+         </select>
+       </div>
+
+        <div class="form-group col-md-4">
+          <label for="inputState">Sort On</label>
+          <select id="inputState" class="form-control">
+          <option selected>Choose...</option>
+          <option value="marks">Marks</option>
+          <option value="roll_number">Roll Number</option>
+        </select>
+        </div>
+
+
+  <button type="submit" class="btn btn-primary">Sign in</button>
+  </form>
+
+</div>
+<!-- Material form contact -->
+</p>
+{% endblock %}

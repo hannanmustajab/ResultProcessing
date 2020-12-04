@@ -3,14 +3,14 @@
 {% block content %}
     <div class="jumbotron">
         <h2 class="display-4">{{record['name']}}</h2>
-        <h3>Total Students <span class="badge badge-secondary">{{total}}</span></h3>
-        <h3>Total Internals <span class="badge badge-secondary">{{internals}}</span></h3>
-        <h3>Total External <span class="badge badge-secondary">{{externals}}</span></h3>
+        <h3>Total Students  : {{total}}</h3>
+        <h3>Total Internals : {{internals}}</h3>
+        <h3>Total External  : {{externals}}</h3>
         <hr class="my-4">
         <h2>Total Branches: {{record['no_of_branches']}}</h2>
         <p class="lead">
          {% if courses_len == record['no_of_branches'] and not record['processed'] %}
-            <a class="btn btn-primary btn-lg" href="#" role="button">Generate Result</a>
+            <a class="btn btn-primary btn-lg" href="{{url_for('generateMeritFunction',course_id=course_id)}}" role="button">Generate Result</a>
          {% elif record['processed'] %}
         </p>
         <button type="button" class="btn btn-primary btn-lg">Download PDF</button>
