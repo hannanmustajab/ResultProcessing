@@ -1,14 +1,19 @@
 {% extends 'layouts/main.html' %}
 {% block title %}About{% endblock %}
 {% block content %}
-<div class="form-group">
+<div class="container form-group">
   <h2 class="title">Add Students List</h2>
   <form method="POST" action="{{url_for('uploadStudents')}}" enctype="multipart/form-data">
 
           {{ form.hidden_tag() }}
         <div class="form-group">
           {{ form.name.label }}
+<<<<<<< HEAD
          {{form.name(size=20)}}
+=======
+         <input class="form-control" type="text" name=form.name(size=20)>
+
+>>>>>>> 80a5f8080ebe7da7f2dc8467f4e575707c1c26da
         </div>
       <div class="form-field">
           {{ form.course_id.label }}
