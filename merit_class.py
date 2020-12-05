@@ -261,8 +261,8 @@ class Merit():
             fields.append(
                 [data['name'], data['roll_number'], data['Rank'], data['branch'], data['type'], data['marks']])
 
-        path = f'{self._year}/{self.course_id}/{type}'
-        file_name = os.path.join(path, '.pdf')
+        path = f'results/{self._year}/{self.course_id}/'
+        file_name = os.path.join(path, f'{type}.pdf')
         header = Paragraph('ALIGARH MUSLIM UNIVERSITY ' * 5)
         pdf = SimpleDocTemplate(
             file_name,
