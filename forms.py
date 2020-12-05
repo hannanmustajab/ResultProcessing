@@ -32,3 +32,6 @@ class AddBranchForm(FlaskForm):
     external_seats = IntegerField('External', validators=[DataRequired()])
     extra_seats = IntegerField('Special ')
     submit = SubmitField('Add Branch')
+
+class GenerateChanceMemoForm(FlaskForm):
+    pass

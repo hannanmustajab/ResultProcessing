@@ -3,7 +3,6 @@
 #----------------------------------------------------------------------------#
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
-
 from flask_celery import make_celery
 # from werkzeug import secure_filename
 from db import collection,courses_collection,course_information,merit,chance_memo_collection
@@ -98,8 +97,8 @@ def viewStudents(course_id):
 
 # Generate the merit
 @app.route('/merit/generate/<course_id>', methods=['GET', 'POST'])
-def generateMeritFunction(course_id):
-    task = generateMerit(course_id).apply_async()
+def generateMeritFunction(course_id,chance_memo):
+    task = generateMerit(course_id,chance_memo).apply_async()
     return  redirect(url_for('taskstatus',task_id=task.id))
 
 @app.route('/status/<task_id>')
@@ -200,8 +199,8 @@ def return_file():
 
 # Create celery task here.
 @celery.task(bind=True)
-def generateMerit(self,course_id):
-    merit = Merit(course_id, EB=True, chance_memo=400, sort_on='marks')
+def generateMerit(self,course_id,chance_memo):
+    merit = Merit(course_id, EB=True, chance_memo=chance_memo, sort_on='marks')
     merit.generateChanceMemo()
     course_information.update_one({'course_id': course_id},{'$set':{'processed':True}})
     return { 'status': 'Task completed!'}

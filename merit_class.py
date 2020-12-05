@@ -241,7 +241,7 @@ class Merit():
         fields = ['Name', 'Roll Number', 'Rank', 'Branch', 'Category', 'Marks']
         sort_on = self.sort_on  # Sort on marks or rollnumber
         type = 'select'
-        self.generatePDF(fields, sort_on, type)
+        # self.generatePDF(fields, sort_on, type)
 
         # for student in final_list:
         #     print(
@@ -420,7 +420,7 @@ class Merit():
         ]
         sort_on = self.sort_on  # Sort on marks or rollnumber
         type = 'chance_memo'
-        self.generatePDF(list, sort_on, type)
+        # self.generatePDF(list, sort_on, type)
 
         return chance_memo_list
 
