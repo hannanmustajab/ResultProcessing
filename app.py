@@ -18,7 +18,7 @@ from logging import Formatter, FileHandler
 import os
 import io
 import datetime
-from forms import AddStudents,AddBranchForm
+from forms import AddStudents,AddBranchForm,GenerateChanceMemoForm
 now = datetime.datetime.now()
 #----------------------------------------------------------------------------#
 # App Config.
@@ -75,6 +75,7 @@ def uploadStudents():
 @app.route('/students/view/<course_id>',methods=['GET','POST'])
 def viewStudents(course_id):
     form = AddBranchForm()
+    chance_memo_form = GenerateChanceMemoForm()
     record = course_information.find_one({'course_id': int(course_id)})
     if form.validate_on_submit():
         name = form.name.data
@@ -90,13 +91,18 @@ def viewStudents(course_id):
     externals = collection.count_documents({'$and': [{'course': course_id}, {'category': 'E'}]})
     courses = courses_collection.find({'course':course_id})
     courses_len = courses_collection.count_documents({'course':course_id})
+    if chance_memo_form.validate_on_submit():
+        chance_memo = chance_memo_form.chance_memo.data
+        chance_memo = int(chance_memo)
+        generateMeritFunction(course_id=course_id,chance_memo=chance_memo)
+        return redirect(url_for('viewStudents',course_id=course_id))
 
-    return render_template('pages/view_students.html',total=total,courses_len=courses_len,internals=internals,externals=externals,record=record,courses=courses,form=form,course_id=course_id)
+    return render_template('pages/view_students.html',chance_memo_form=chance_memo_form,total=total,courses_len=courses_len,internals=internals,externals=externals,record=record,courses=courses,form=form,course_id=course_id)
 
 # Generate the merit
-@app.route('/merit/generate/<course_id>', methods=['GET', 'POST'])
-def generateMeritFunction(course_id):
-    generateMerit.delay(course_id=course_id)
+# @app.route('/merit/generate/<course_id>', methods=['GET', 'POST'])
+def generateMeritFunction(course_id,chance_memo):
+    generateMerit.delay(course_id=course_id,chance_memo=chance_memo)
     return  redirect(url_for('home'))
 
 @app.route('/status/<task_id>')
@@ -189,9 +195,9 @@ if not app.debug:
 
 # Create celery task here.
 @celery.task(name='app.generateMerit')
-def generateMerit(course_id):
-    print(type(course_id))
-    merit = Merit(course_id, EB=True, chance_memo=200, sort_on='marks')
+def generateMerit(course_id,chance_memo):
+    record = course_information.find_one({'course_id': int(course_id)})
+    merit = Merit(course_id, EB=record['EB'], chance_memo=chance_memo, sort_on='marks')
     merit.generateChanceMemo()
     course_information.update_one({'course_id': int(course_id)},{'$set':{'processed':True}})
     return { 'status': 'Task completed!'}

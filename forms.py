@@ -34,4 +34,7 @@ class AddBranchForm(FlaskForm):
     submit = SubmitField('Add Branch')
 
 class GenerateChanceMemoForm(FlaskForm):
-    pass
+    chance_memo = IntegerField(
+        'Enter number of chance memo', validators=[DataRequired()]
+    )
+    submit = SubmitField('Generate Result')

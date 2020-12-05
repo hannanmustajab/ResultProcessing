@@ -6,6 +6,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from db import courses_collection, collection, merit, chance_memo_collection
+from pathlib import Path
+
 
 
 class Merit():
@@ -33,7 +35,7 @@ class Merit():
         iteration = 0
         # print(iteration)
 
-        # self.printProgressBar(0, result_length, length = 50)
+        self.printProgressBar(0, result_length, length = 50)
 
         for student in result:
             first_choice = student['choices'][0]
@@ -233,15 +235,17 @@ class Merit():
                     chance_memo_list.append(data)
 
             iteration += 1
-            # self.printProgressBar(iteration, result_length, length=50)
+            self.printProgressBar(iteration, result_length, length=50)
 
         merit.insert_many(final_list)
 
         # Generate PDF
-        fields = ['Name', 'Roll Number', 'Rank', 'Branch', 'Category', 'Marks']
+        list = [
+            ['Name', 'Roll Number', 'Rank', 'Branch', 'Category', 'Marks']
+        ]
         sort_on = self.sort_on  # Sort on marks or rollnumber
         type = 'select'
-        # self.generatePDF(fields, sort_on, type)
+        self.generatePDF(list, sort_on, type)
 
         # for student in final_list:
         #     print(
@@ -254,13 +258,13 @@ class Merit():
             cursor = chance_memo_collection.find(
                 {"$and": [{'course': self.course_id}, {'year': str(self._year)}]}).sort(sort_on, pymongo.DESCENDING)
         elif type == 'select':
-            cursor = merit.find({"$and": [{'course': self.course_id}, {'year': str(self._year)}]}).sort(sort_on,
-                                                                                                        pymongo.DESCENDING)
+            cursor = merit.find({"$and": [{'course': self.course_id}, {'year': str(self._year)}]})
 
         for data in cursor:
             fields.append(
                 [data['name'], data['roll_number'], data['Rank'], data['branch'], data['type'], data['marks']])
 
+        Path(f'results/{self._year}/{self.course_id}').mkdir(parents=True, exist_ok=True)
         path = f'results/{self._year}/{self.course_id}/'
         file_name = os.path.join(path, f'{type}.pdf')
         header = Paragraph('ALIGARH MUSLIM UNIVERSITY ' * 5)
@@ -420,7 +424,7 @@ class Merit():
         ]
         sort_on = self.sort_on  # Sort on marks or rollnumber
         type = 'chance_memo'
-        # self.generatePDF(list, sort_on, type)
+        self.generatePDF(list, sort_on, type)
 
         return chance_memo_list
 
