@@ -15,7 +15,7 @@ class Students():
         self.number_of_choices = no_of_choices
 
     def __read_students(self,file):
-        with open('uploads/'+file) as csv_file:
+        with open('uploads/'+f'{self.course_id}'+file) as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter=',')
             count = 0
             default = ['COBT', 'LEBT', 'EEBT', 'KEBT', 'PKBT', 'MEBT', 'CEBT']

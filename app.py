@@ -2,6 +2,8 @@
 # Imports
 #----------------------------------------------------------------------------#
 from pathlib import Path
+
+from celery.result import AsyncResult
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 from flask_celery import make_celery
 # from werkzeug import secure_filename
@@ -28,14 +30,9 @@ app.config['CELERY_BROKER_URL'] ='redis://localhost:6379/0'
 
 celery = make_celery(app)
 
-
-
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
-
-
-
 @app.route('/')
 def home():
     courses = course_information.find()
@@ -70,7 +67,7 @@ def uploadStudents():
         if form.special_category.data:
             course.setEBCategory()
 
-        return render_template('pages/placeholder.home.html')
+        return redirect(url_for('home'))
 
     return render_template('forms/addCourse.html',form=form)
 
@@ -78,18 +75,19 @@ def uploadStudents():
 @app.route('/students/view/<course_id>',methods=['GET','POST'])
 def viewStudents(course_id):
     form = AddBranchForm()
+    record = course_information.find_one({'course_id': int(course_id)})
     if form.validate_on_submit():
         name = form.name.data
         internal_seats = form.internal_seats.data
         external = form.external_seats.data
         special = form.extra_seats.data
         course = Courses(course_id)
-        course.setEBCategory()
+        if record['EB']:
+            course.setEBCategory()
         course.addBranch(name,internal_seats,external,special)
     total = collection.count_documents({'course': course_id})
     internals = collection.count_documents({'$and': [{'course': course_id}, {'category': 'I'}]})
     externals = collection.count_documents({'$and': [{'course': course_id}, {'category': 'E'}]})
-    record = course_information.find_one({'course_id':int(course_id)})
     courses = courses_collection.find({'course':course_id})
     courses_len = courses_collection.count_documents({'course':course_id})
 
@@ -97,9 +95,9 @@ def viewStudents(course_id):
 
 # Generate the merit
 @app.route('/merit/generate/<course_id>', methods=['GET', 'POST'])
-def generateMeritFunction(course_id,chance_memo):
-    task = generateMerit(course_id,chance_memo).apply_async()
-    return  redirect(url_for('taskstatus',task_id=task.id))
+def generateMeritFunction(course_id):
+    generateMerit.delay(course_id=course_id)
+    return  redirect(url_for('home'))
 
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
@@ -185,24 +183,17 @@ if not app.debug:
     app.logger.addHandler(file_handler)
     app.logger.info('errors')
 
-
-#----------------------------------------------------------------------------#
-# DOWNLOAD PDF
-#----------------------------------------------------------------------------#
-@app.route('/file-download')
-def return_file():
-    return send_file(Merit.generatePDF.return_file(), attachment_filename="Result.pdf")
-
 #----------------------------------------------------------------------------#
 # ALL CELERY TASKS GO HERE...
 #----------------------------------------------------------------------------#
 
 # Create celery task here.
-@celery.task(bind=True)
-def generateMerit(self,course_id,chance_memo):
-    merit = Merit(course_id, EB=True, chance_memo=chance_memo, sort_on='marks')
+@celery.task(name='app.generateMerit')
+def generateMerit(course_id):
+    print(type(course_id))
+    merit = Merit(course_id, EB=True, chance_memo=200, sort_on='marks')
     merit.generateChanceMemo()
-    course_information.update_one({'course_id': course_id},{'$set':{'processed':True}})
+    course_information.update_one({'course_id': int(course_id)},{'$set':{'processed':True}})
     return { 'status': 'Task completed!'}
 
 
